@@ -36,3 +36,11 @@ Thumbs.db
 logs/
 .pytest_tmp/
 pytest_temp/
+
+# Local datasets and generated model artifacts
+mvtec_anomaly_detection/
+artifacts/
+outputs/
+.venv/
+__pycache__/
+.pytest_cache/
