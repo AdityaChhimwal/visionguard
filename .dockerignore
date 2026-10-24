@@ -1,0 +1,12 @@
+.git
+.venv
+.pytest_cache
+__pycache__
+*.py[cod]
+notebooks
+mvtec_anomaly_detection
+artifacts
+outputs
+data
+tests
+ENGINEERING_LOG.md

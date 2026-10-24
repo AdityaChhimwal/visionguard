@@ -1,0 +1,13 @@
+{
+  "dataset_root": "mvtec_anomaly_detection",
+  "artifact_dir": "artifacts/bottle_v1",
+  "output_dir": "outputs",
+  "category": "bottle",
+  "image_size": [224, 224],
+  "batch_size": 16,
+  "threshold_percentile": 95.0,
+  "seed": 42,
+  "feature_extractor": "vgg16_block5_global_average",
+  "weights": "imagenet",
+  "model_version": "visionguard-v0.1.0"
+}
