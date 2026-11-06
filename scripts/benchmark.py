@@ -12,7 +12,7 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from pathlib import Path
 from threading import Event, Thread
 
@@ -47,7 +47,8 @@ def server(log: Path) -> Iterator[tuple[str, dict]]:
         def monitor():
             while not stop.is_set():
                 try:
-                    samples.append(process.memory_info().rss)
+                    group = [process, *process.children(recursive=True)]
+                    samples.append(sum(child.memory_info().rss for child in group))
                 except psutil.Error:
                     return
                 stop.wait(0.01)
@@ -76,6 +77,10 @@ def server(log: Path) -> Iterator[tuple[str, dict]]:
             stop.set()
             thread.join()
             evidence["peak_rss_mib"] = round(max(samples, default=0) / 1024 ** 2, 2)
+            # Windows virtualenv launchers can spawn the actual server process.
+            for child in reversed(process.children(recursive=True)):
+                with suppress(psutil.NoSuchProcess):
+                    child.terminate()
             proc.terminate()
             try:
                 proc.wait(timeout=5)
