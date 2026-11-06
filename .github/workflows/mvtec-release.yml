@@ -1,0 +1,138 @@
+name: Verify and publish the MVTec AD bundle
+on:
+  workflow_dispatch:
+    inputs:
+      training_run:
+        description: Successful Train and evaluate MVTec AD run ID
+        required: true
+        type: string
+  push:
+    branches: [codex/mvtec-ad]
+    paths: [".github/workflows/mvtec-release.yml"]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      training_run: ${{ steps.source.outputs.run }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select a successful model run
+        id: source
+        env:
+          REQUESTED_RUN: ${{ inputs.training_run }}
+        run: |
+          run="$REQUESTED_RUN"
+          if [ -z "$run" ]; then
+            run="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/mvtec-models.yml/runs?branch=codex%2Fmvtec-ad&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')"
+          fi
+          [[ "$run" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run" \
+            --jq '.conclusion == "success" and (.path | startswith(".github/workflows/mvtec-models.yml"))' | grep -x true
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: mvtec-*
+          run-id: ${{ steps.source.outputs.run }}
+          github-token: ${{ github.token }}
+          path: outputs/trained
+          merge-multiple: true
+      - name: Package and provision the exact evaluated artifacts
+        run: |
+          python -m scripts.package_mvtec --artifacts outputs/trained/artifacts --output outputs/release/mvtec-ad-pc-v1.tar.xz
+          python -m scripts.provision_bundle --file outputs/release/mvtec-ad-pc-v1.tar.xz \
+            --sha256 "$(cat outputs/release/mvtec-ad-pc-v1.sha256)" --target outputs/provisioned
+          du -h outputs/release/mvtec-ad-pc-v1.tar.xz
+      - name: Test all 30 examples in an offline Render-sized container
+        run: |
+          docker build -t visionguard:mvtec .
+          started=$SECONDS
+          docker run -d --name vg-mvtec --network none --memory 512m --memory-swap 512m --cpus 0.1 \
+            -e VG_THREADS=1 -e VG_INFERENCE_SLOTS=1 -e VG_MODEL_CACHE_SIZE=1 -e VG_REQUIRE_ALL_MODELS=1 \
+            -e VG_MAX_PIXELS=4000000 -e VG_UPLOAD_BYTES=6291456 \
+            -v "$PWD/outputs/provisioned:/models:ro" -v "$PWD/outputs/trained/outputs:/reports:ro" \
+            visionguard:mvtec
+          trap 'docker logs vg-mvtec; docker rm -f vg-mvtec' EXIT
+          ready=no
+          for attempt in $(seq 1 180); do
+            if docker exec vg-mvtec python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/ready', timeout=2).read()" >/dev/null 2>&1; then
+              ready=yes
+              break
+            fi
+            sleep 1
+          done
+          test "$ready" = yes
+          ready_seconds=$((SECONDS - started))
+          mkdir -p outputs/verification
+          docker exec -i vg-mvtec python - --url http://127.0.0.1:8000 --all-categories --reports /reports \
+            < scripts/verify_public.py | tee outputs/verification/container-http.json
+          peak="$(docker exec vg-mvtec cat /sys/fs/cgroup/memory.peak)"
+          test "$peak" -lt 536870912
+          test "$(docker inspect --format '{{.State.OOMKilled}}' vg-mvtec)" = false
+          printf '{"startup_seconds":%s,"cgroup_peak_bytes":%s,"memory_limit_mib":512,"cpu_limit":0.1}\n' \
+            "$ready_seconds" "$peak" | tee outputs/verification/container-resources.json
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: 0.10.12
+      - name: Verify desktop and mobile category switching in Chromium
+        run: |
+          uv sync --locked --python 3.13 --group browser
+          uv run --no-sync playwright install --with-deps chromium
+          export VG_ARTIFACTS="$PWD/outputs/provisioned"
+          export VG_SAMPLES="$VG_ARTIFACTS/samples"
+          export VG_THREADS=1 VG_MODEL_CACHE_SIZE=1 VG_REQUIRE_ALL_MODELS=1
+          uv run --no-sync uvicorn visionguard.api.main:app --host 127.0.0.1 --port 8000 > outputs/verification/browser-server.log 2>&1 &
+          server=$!
+          trap 'kill "$server" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8000/ready; then break; fi
+            sleep 1
+          done
+          uv run --no-sync python -m scripts.verify_mvtec_browser --url http://127.0.0.1:8000 --output outputs/verification/browser
+      - name: Bundle evaluation and HTTP evidence
+        run: |
+          python -m zipfile -c outputs/release/mvtec-ad-pc-v1-evaluation.zip \
+            outputs/trained/outputs/*-evaluation.json outputs/verification/container-*.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mvtec-release-assets
+          path: outputs/release/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mvtec-release-evidence
+          path: outputs/verification/
+          retention-days: 14
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TRAINING_RUN: ${{ needs.verify.outputs.training_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: mvtec-release-assets
+          path: outputs/release
+      - name: Publish a versioned non-commercial model release
+        run: |
+          printf 'Prepared and evaluated PatchCore artifacts for all 15 MVTec AD categories.\n\nTraining run: https://github.com/%s/actions/runs/%s\n\n' \
+            "$GITHUB_REPOSITORY" "$TRAINING_RUN" > outputs/release-notes.md
+          cat NOTICE.md >> outputs/release-notes.md
+          gh release create mvtec-ad-pc-v1 --target "$GITHUB_SHA" \
+            --title "MVTec AD PatchCore v1 — all 15 categories" --notes-file outputs/release-notes.md \
+            outputs/release/mvtec-ad-pc-v1.tar.xz outputs/release/mvtec-ad-pc-v1.sha256 \
+            outputs/release/mvtec-ad-pc-v1-evaluation.zip
