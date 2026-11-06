@@ -1,0 +1,13 @@
+category = "bottle"
+version = "bottle-pc-v1"
+backbone = "resnet18.a1_in1k"
+weights_revision = "491b427b45c94c7fb0e78b5474cc919aff584bbf"
+layers = ["layer2", "layer3"]
+image_size = 160
+coreset_ratio = 0.01
+neighbors = 1
+seed = 42
+calibration_fraction = 0.20
+false_positive_target = 0.05
+batch_size = 8
+threads = 2
