@@ -8,3 +8,5 @@
 !visionguard/**
 **/__pycache__/
 **/*.pyc
+!scripts/
+!scripts/provision_bundle.py

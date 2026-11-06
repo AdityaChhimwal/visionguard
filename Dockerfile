@@ -8,6 +8,12 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev --no-python-downloads --no-cache
 COPY configs/ configs/
 COPY visionguard/ visionguard/
+COPY scripts/provision_bundle.py /app/scripts/provision_bundle.py
+ARG VG_BUNDLE_URL=""
+ARG VG_BUNDLE_SHA256=""
+RUN if [ -n "$VG_BUNDLE_URL" ] || [ -n "$VG_BUNDLE_SHA256" ]; then \
+      python /app/scripts/provision_bundle.py --url "$VG_BUNDLE_URL" --sha256 "$VG_BUNDLE_SHA256" --target /models; \
+    fi
 USER 10001:10001
 EXPOSE 8000
 HEALTHCHECK --interval=15s --timeout=3s --start-period=20s CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ['PORT']+'/ready',timeout=2)"
