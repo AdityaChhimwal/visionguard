@@ -1,4 +1,4 @@
-"""Produce bounded PNG previews with a calibration-fixed overlay."""
+"""Produce bounded previews with a calibration-fixed overlay."""
 
 import base64
 from io import BytesIO
@@ -31,3 +31,9 @@ def png_url(image: Image.Image) -> str:
     with BytesIO() as stream:
         image.save(stream, format="PNG", compress_level=3)
         return "data:image/png;base64," + base64.b64encode(stream.getvalue()).decode("ascii")
+
+
+def jpeg_url(image: Image.Image) -> str:
+    with BytesIO() as stream:
+        image.save(stream, format="JPEG", quality=88, subsampling=0)
+        return "data:image/jpeg;base64," + base64.b64encode(stream.getvalue()).decode("ascii")

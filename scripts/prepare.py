@@ -24,7 +24,9 @@ def tensor_for(path: Path, size: int) -> np.ndarray:
     return preprocess(decode_image(path.read_bytes()), size)
 
 
-def prepare(config: dict, dataset: Path, weights: Path, output: Path) -> dict:
+def prepare(
+    config: dict, dataset: Path, weights: Path, output: Path, *, command: list[str] | None = None,
+) -> dict:
     started = perf_counter()
     if output.exists():
         raise FileExistsError(f"{output} already exists. Choose a new output or version.")
@@ -34,6 +36,8 @@ def prepare(config: dict, dataset: Path, weights: Path, output: Path) -> dict:
     size = config["image_size"]
     threads = config["threads"]
     torch.set_num_threads(threads)
+    # Anomalib's sparse projection samples column indices through scikit-learn.
+    np.random.seed(config["seed"])
     torch.manual_seed(config["seed"])
     torch.use_deterministic_algorithms(True)
     manifest = normal_split(dataset, config["seed"], config["calibration_fraction"])
@@ -97,7 +101,7 @@ def prepare(config: dict, dataset: Path, weights: Path, output: Path) -> dict:
             },
             "sha256": {name: sha256(directory / name) for name in (MODEL_FILE, SPLIT_FILE)},
             "preparation": {
-                "command": ["python", "-m", "scripts.prepare", *sys.argv[1:]],
+                "command": command or ["python", "-m", "scripts.prepare", *sys.argv[1:]],
                 "os": platform.platform(),
                 "cpu": platform.processor(),
                 "seconds": round(perf_counter() - started, 3),

@@ -8,14 +8,18 @@ services:
     autoDeployTrigger: "off"
     envVars:
       - key: VG_BUNDLE_URL
-        value: https://github.com/AdityaChhimwal/visionguard/releases/download/bottle-pc-v1/bottle-pc-v1.zip
+        value: https://github.com/AdityaChhimwal/visionguard/releases/download/mvtec-ad-pc-v1/mvtec-ad-pc-v1.tar.xz
       - key: VG_BUNDLE_SHA256
-        value: 735c75e3acdaffa7a5e79ea8d9c5345e8a8e07e812868970059a6ef687dc6235
+        value: e837bf3426e4b4714541077b202ef035cc34f51634dc8ff3ff00189797157f58
       - key: PORT
         value: "8000"
       - key: VG_THREADS
         value: "1"
       - key: VG_INFERENCE_SLOTS
+        value: "1"
+      - key: VG_MODEL_CACHE_SIZE
+        value: "1"
+      - key: VG_REQUIRE_ALL_MODELS
         value: "1"
       - key: VG_MAX_PIXELS
         value: "4000000"

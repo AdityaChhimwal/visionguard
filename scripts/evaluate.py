@@ -45,13 +45,50 @@ def summarize(labels: list[int], scores: list[float], threshold: float) -> dict:
     }
 
 
-def evaluate(dataset: Path, bundle: Path, category: str, version: str, threads: int) -> dict:
+class PixelAurocHistogram:
+    """Count aligned positive and negative pixels in fixed monotonic score bins."""
+
+    def __init__(self, bins: int, scale: float):
+        if bins < 2:
+            raise ValueError("Pixel AUROC needs at least two bins.")
+        self.positive = np.zeros(bins, dtype=np.int64)
+        self.negative = np.zeros(bins, dtype=np.int64)
+        self.scale = scale
+
+    def add(self, mask: np.ndarray, scores: np.ndarray) -> None:
+        # A monotonic transform maps distances in [0, infinity) to [0, 1).
+        # The calibration scale is frozen and requires no test-set range fit.
+        scores = np.maximum(scores.ravel(), 0)
+        bins = self.positive.size
+        index = np.minimum((scores / (scores + self.scale) * bins).astype(np.int32), bins - 1)
+        positive = np.bincount(index[mask.ravel()], minlength=bins)
+        self.positive += positive
+        self.negative += np.bincount(index, minlength=bins) - positive
+
+    def auroc(self) -> tuple[float, int]:
+        positive_count = int(self.positive.sum())
+        negative_count = int(self.negative.sum())
+        if not positive_count or not negative_count:
+            raise ValueError("Pixel AUROC requires positive and negative pixels.")
+        # A positive beats every negative in a lower bin and ties half in the same bin.
+        ranks = self.negative.cumsum() - 0.5 * self.negative
+        area = float(self.positive @ ranks) / (positive_count * negative_count)
+        return area, positive_count + negative_count
+
+
+def evaluate(
+    dataset: Path, bundle: Path, category: str, version: str, threads: int,
+    *, pixel_bins: int | None = None, command: list[str] | None = None,
+) -> dict:
     started = perf_counter()
     artifact = Artifact(bundle, category, version, threads)
     training_hashes = set(
         json.loads((bundle / SPLIT_FILE).read_text(encoding="utf-8"))["sha256"].values()
     )
     labels, scores, pixels, maps, rows = [], [], [], [], []
+    histogram = (
+        PixelAurocHistogram(pixel_bins, artifact.heatmap_high) if pixel_bins is not None else None
+    )
     seen = set()
     for path, mask in test_pairs(dataset):
         digest = sha256(path)
@@ -63,17 +100,32 @@ def evaluate(dataset: Path, bundle: Path, category: str, version: str, threads: 
         target = int(mask is not None)
         labels.append(target)
         scores.append(score)
-        pixels.append(mask_at_original_size(mask, image.size).ravel())
-        maps.append(align_map(anomaly_map, image.size).ravel())
+        pixel_mask = mask_at_original_size(mask, image.size)
+        aligned = align_map(anomaly_map, image.size)
+        if histogram is not None:
+            histogram.add(pixel_mask, aligned)
+        else:
+            pixels.append(pixel_mask.ravel())
+            maps.append(aligned.ravel())
         rows.append({
             "image": path.relative_to(dataset).as_posix(),
             "target": "ANOMALY" if target else "NORMAL",
             "score": score,
             "label": classify(score, artifact.threshold),
         })
-    pixel_targets = np.concatenate(pixels)
-    pixel_scores = np.concatenate(maps)
-    del pixels, maps
+    if histogram is not None:
+        pixel_auroc, pixel_count = histogram.auroc()
+        pixel_protocol = (
+            "Pooled original-resolution masks and bilinear aligned raw maps. "
+            f"Approximate AUROC from {pixel_bins} fixed bins of score / (score + heatmap_high)."
+        )
+    else:
+        pixel_targets = np.concatenate(pixels)
+        pixel_scores = np.concatenate(maps)
+        del pixels, maps
+        pixel_auroc = float(roc_auc_score(pixel_targets, pixel_scores))
+        pixel_count = len(pixel_targets)
+        pixel_protocol = "Pooled original-resolution masks; bilinear aligned raw maps"
     return {
         "category": category,
         "version": version,
@@ -83,16 +135,16 @@ def evaluate(dataset: Path, bundle: Path, category: str, version: str, threads: 
         "defective": labels.count(1),
         "threshold": artifact.threshold,
         **summarize(labels, scores, artifact.threshold),
-        "pixel_auroc": float(roc_auc_score(pixel_targets, pixel_scores)),
-        "pixel_count": len(pixel_targets),
-        "pixel_protocol": "Pooled original-resolution masks; bilinear aligned raw maps",
+        "pixel_auroc": pixel_auroc,
+        "pixel_count": pixel_count,
+        "pixel_protocol": pixel_protocol,
         "artifact": artifact.metadata,
         "runtime": {
             "os": platform.platform(),
             "cpu": platform.processor(),
             "threads": threads,
             "seconds": round(perf_counter() - started, 3),
-            "command": ["python", "-m", "scripts.evaluate", *sys.argv[1:]],
+            "command": command or ["python", "-m", "scripts.evaluate", *sys.argv[1:]],
         },
         "predictions": rows,
     }
@@ -105,8 +157,12 @@ def main() -> None:
     parser.add_argument("--category", required=True)
     parser.add_argument("--version", required=True)
     parser.add_argument("--threads", type=int, default=2)
+    parser.add_argument("--pixel-bins", type=int, help="Use this many fixed AUROC bins")
     args = parser.parse_args()
-    report = evaluate(args.dataset, args.artifact, args.category, args.version, args.threads)
+    report = evaluate(
+        args.dataset, args.artifact, args.category, args.version, args.threads,
+        pixel_bins=args.pixel_bins,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in report.items() if k not in {"predictions", "artifact"}}, indent=2))

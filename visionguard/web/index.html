@@ -11,23 +11,23 @@
 <body>
   <header class="shell masthead">
     <a class="brand" href="/" aria-label="VisionGuard home"><span aria-hidden="true">VG</span> VisionGuard</a>
-    <span class="tag">Portfolio demo</span>
+    <span class="tag" id="category-count">Portfolio demo</span>
   </header>
   <main class="shell">
     <div class="intro">
       <p class="eyebrow">Industrial visual inspection</p>
       <h1>Inspect a product image</h1>
-      <p>See how PatchCore compares a product image with examples of normal appearance and highlights unusual regions.</p>
+      <p>Choose an inspection category. PatchCore compares your image with normal examples for that category and highlights unusual regions.</p>
     </div>
 
     <section class="workspace" aria-label="Image inspection">
       <section class="card upload-card" aria-labelledby="setup-title">
         <h2 id="setup-title">Set up inspection</h2>
-        <label for="category">Product category</label>
+        <label for="category">Inspection category</label>
         <select id="category" aria-describedby="category-hint" disabled>
           <option value="">Loading categories…</option>
         </select>
-        <p id="category-hint" class="hint">Select a category that matches your product.</p>
+        <p id="category-hint" class="hint">Select the category that matches your image.</p>
 
         <div id="drop" class="drop">
           <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M4 15v5h16v-5"/></svg>
@@ -37,7 +37,7 @@
         </div>
 
         <div id="examples" class="examples" hidden>
-          <p>Try a dataset example</p>
+          <p id="examples-title">Try a dataset example</p>
           <div id="example-buttons" class="buttons"></div>
           <small>Images: MVTec AD · <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a></small>
         </div>
@@ -64,6 +64,7 @@
             <span id="verdict-text"></span>
           </div>
           <dl class="stats">
+            <div><dt>Category</dt><dd id="result-category"></dd></div>
             <div><dt>Anomaly score</dt><dd id="score"></dd></div>
             <div><dt>Threshold</dt><dd id="threshold"></dd></div>
           </dl>

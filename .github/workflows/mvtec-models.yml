@@ -1,0 +1,70 @@
+name: Train and evaluate MVTec AD
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/mvtec-ad]
+    paths:
+      - ".github/workflows/mvtec-models.yml"
+      - "configs/categories.toml"
+      - "configs/bottle.toml"
+      - "scripts/fetch_mvtec.py"
+      - "scripts/build_mvtec.py"
+      - "scripts/evaluate.py"
+      - "scripts/prepare.py"
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    outputs:
+      categories: ${{ steps.categories.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read the release categories
+        id: categories
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import tomllib
+          from pathlib import Path
+
+          categories = list(tomllib.loads(Path("configs/categories.toml").read_text())["categories"])
+          assert len(categories) == 15
+          print("value=" + json.dumps(categories))
+          PY
+
+  build:
+    needs: inventory
+    name: Train and evaluate ${{ matrix.category }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 32
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        category: ${{ fromJSON(needs.inventory.outputs.categories) }}
+    env:
+      CATEGORY: ${{ matrix.category }}
+      UV_HTTP_TIMEOUT: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: 0.10.12
+      - name: Install pinned CPU preparation dependencies
+        run: uv sync --locked --python 3.13 --group prepare
+      - name: Fetch the pinned category and pretrained weights
+        run: uv run --no-sync python -m scripts.fetch_mvtec --category "$CATEGORY"
+      - name: Fit, calibrate, export and evaluate
+        run: uv run --no-sync python -m scripts.build_mvtec --category "$CATEGORY"
+      - name: Retain the evaluated artifact and report
+        uses: actions/upload-artifact@v4
+        with:
+          name: mvtec-${{ matrix.category }}
+          path: |
+            artifacts/${{ matrix.category }}-pc-v1
+            artifacts/samples/${{ matrix.category }}
+            outputs/${{ matrix.category }}-evaluation.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
