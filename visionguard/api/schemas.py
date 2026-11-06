@@ -14,6 +14,7 @@ class Category(BaseModel):
     id: str
     name: str
     description: str
+    kind: Literal["object", "texture"] | None = None
     model_version: str
     samples: list[SampleInfo]
 

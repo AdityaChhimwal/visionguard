@@ -23,6 +23,7 @@ function controls() {
   input.disabled = !category.value;
   analyze.disabled = !image || !category.value || busy;
   analyze.textContent = busy ? "Working…" : "Analyze Image";
+  for (const button of $("example-buttons").children) button.disabled = busy;
   output.setAttribute("aria-busy", String(busy));
 }
 function cancel() {
@@ -65,6 +66,7 @@ function selectImage(file, fromPicker = false) {
 }
 
 async function useSample(sample) {
+  if (busy) return;
   reset();
   const task = new AbortController();
   active = task;
@@ -72,8 +74,7 @@ async function useSample(sample) {
   status("Loading example…");
   controls();
   try {
-    const response = await api(sample.url, { signal: task.signal });
-    const blob = await response.blob();
+    const blob = await api(sample.url, { signal: task.signal, format: "blob" });
     if (active !== task) return;
     selectImage(new File([blob], `${sample.name}.png`, { type: "image/png" }));
     analyze.focus();
@@ -93,7 +94,8 @@ async function useSample(sample) {
 function chooseCategory() {
   reset();
   const entry = categories.find((item) => item.id === category.value);
-  $("category-hint").textContent = entry?.description ?? "Select a category that matches your product.";
+  $("category-hint").textContent = entry?.description ?? "Select the category that matches your image.";
+  $("examples-title").textContent = entry ? `Try a ${entry.name} example` : "Try a dataset example";
   $("examples").hidden = !entry?.samples.length;
   $("example-buttons").replaceChildren(...(entry?.samples ?? []).map((sample) => {
     const button = document.createElement("button");
@@ -104,20 +106,43 @@ function chooseCategory() {
   }));
 }
 
+function displayCategories() {
+  const preferred = category.value || "bottle";
+  category.replaceChildren();
+  const groups = new Map();
+  for (const entry of categories) {
+    const option = new Option(entry.name, entry.id);
+    if (!entry.kind) {
+      category.append(option);
+      continue;
+    }
+    if (!groups.has(entry.kind)) {
+      const group = document.createElement("optgroup");
+      group.label = entry.kind === "texture" ? "Textures" : "Objects";
+      groups.set(entry.kind, group);
+      category.append(group);
+    }
+    groups.get(entry.kind).append(option);
+  }
+  if (categories.some((entry) => entry.id === preferred)) category.value = preferred;
+}
+
 async function discover() {
   $("retry").hidden = true;
   showError();
   status("Checking model availability…");
   try {
-    const result = await (await api("/api/categories", { timeout: 20000 })).json();
+    const result = await api("/api/categories", { timeout: 60000 });
     categories = result.categories;
     maxBytes = result.max_upload_bytes;
     $("file-limit").textContent = `or drop a JPEG, PNG, or WebP (up to ${(maxBytes / 1048576).toFixed(1)} MiB)`;
-    category.replaceChildren(...categories.map((entry) => new Option(entry.name, entry.id)));
     if (!categories.length) throw new Error("No inspection model is ready. Try again later.");
+    displayCategories();
+    $("category-count").textContent = `${categories.length} ${categories.length === 1 ? "category" : "categories"}`;
     category.disabled = false;
     chooseCategory();
   } catch (error) {
+    $("category-count").textContent = "Portfolio demo";
     category.replaceChildren(new Option("No category available", ""));
     category.disabled = true;
     chooseCategory();
@@ -128,6 +153,8 @@ async function discover() {
 
 function render(result) {
   const anomaly = result.label === "ANOMALY";
+  $("result-category").textContent = categories.find((entry) => entry.id === result.category)?.name
+    ?? result.category;
   $("label").textContent = result.label;
   $("label").classList.toggle("anomaly", anomaly);
   $("verdict-text").textContent = anomaly ? "The score exceeds the threshold." : "The score does not exceed the threshold.";
@@ -152,12 +179,11 @@ analyze.addEventListener("click", async () => {
   status("Analyzing image…");
   controls();
   try {
-    const url = `/api/predict?category=${encodeURIComponent(category.value)}`;
-    const response = await api(url, {
+    const url = `/api/predict?category=${encodeURIComponent(category.value)}&preview=jpeg`;
+    const result = await api(url, {
       method: "POST", body: image, signal: task.signal,
       headers: { "Content-Type": "application/octet-stream" },
     });
-    const result = await response.json();
     if (active !== task) return;
     render(result);
     status("Inspection complete.");
