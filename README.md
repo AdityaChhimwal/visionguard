@@ -1,167 +1,99 @@
-VisionGuard
-Industrial Visual Anomaly Detection
+# VisionGuard — Industrial Visual Anomaly Detection
 
-Industrial visual anomaly detection — reproducible normal-only baseline.
+VisionGuard is a non-commercial portfolio demo for checking product images under repeatable inspection conditions. Upload a product image and the service returns a PatchCore decision, its raw anomaly score and threshold, and an aligned heatmap overlay. The first release targets **MVTec AD Bottle**. Each category needs its own fitted, verified artifact.
 
-VisionGuard learns from defect-free product images and flags new images that deviate from normal visual features. It is a research/portfolio prototype, not a certified inspection product or a production-ready quality-control system.
+**Deployment:** No public inference URL is verified yet. The instructions below run the real model locally.
 
-Why anomaly detection?
+```mermaid
+flowchart LR
+    A[Normal training images] --> B[Fit Anomalib PatchCore]
+    B --> C[Export CNN and coreset graph]
+    D[Separate normal calibration images] --> E[Freeze threshold and heatmap range]
+    C --> E
+    E --> F[Versioned local artifact]
+    U[Browser upload] --> G[FastAPI]
+    F --> G
+    G --> H[ONNX Runtime score and map]
+    H --> I[Decision and aligned overlay]
+```
 
-In manufacturing, examples of every future defect are seldom available. A supervised defect classifier consequently has the wrong training assumption for this baseline. VisionGuard fits only train/good images and assigns a distance score to new images. The score is not a defect probability.
+PatchCore uses an ImageNet-pretrained CNN to represent small regions at two feature scales. During preparation it keeps a representative subset of patches from **normal** bottles. During inspection it finds the nearest stored patch for each new patch. The largest distance becomes the image score; the distances across the frame form the anomaly map. A score is a distance, and NORMAL means it did not exceed the chosen threshold.
 
-Methodology
-text
-normal MVTec training images
-  -> RGB resize (224 x 224) + VGG16 ImageNet preprocessing
-  -> frozen VGG16 block-5 features + global average pooling (512 values)
-  -> L2-normalized normal reference bank
+FastAPI serves the page and API from one origin. Plain HTML, CSS and JavaScript handle upload and comparison. Anomalib and PyTorch prepare the model; ONNX Runtime executes the checked, exported graph in the service. There is one application process and no database or image storage.
 
-new image -> same preprocessing/features -> nearest-reference Euclidean distance
-          -> score >= normal-only threshold ? anomaly : normal
+## Real inspection results
 
+![VisionGuard's desktop inspection result for a normal Bottle image](docs/screenshots/desktop.png)
 
-The decision threshold is the 95th percentile of leave-one-out nearest-neighbor scores from normal training images. Each calibration image is excluded from its own reference comparison, avoiding a zero-distance leak. The full normal bank remains available at inference. Test images, labels, and masks are never used for fitting or threshold selection.
+See the [mobile defect result](docs/screenshots/mobile.png). Screenshots come from the [real Chromium check](https://github.com/AdityaChhimwal/visionguard/actions/runs/42185022406); Bottle imagery is attributed in [NOTICE](NOTICE.md).
 
-This is an image-level baseline. It does not create spatial anomaly maps or claim pixel-level localization.
+On 83 MVTec AD Bottle test images, image AUROC was **0.9984**, pixel AUROC **0.9718**, and F1 **0.9692** at a cutoff of **8.511868**. Four of 20 good images were flagged; all 63 defective images were detected. The Linux runner measured **220 ms** median warm loopback latency and **188 MiB** peak sampled process RSS. See the [full report](docs/verification.md) for protocol and limits.
 
-Dataset and licensing
+## Run with a prepared artifact
 
-This project expects MVTec AD, an industrial anomaly-detection benchmark with 15 categories, normal training images, normal/defective test images, and pixel masks for anomalous samples.
+Use 64-bit Python 3.13 and [uv](https://docs.astral.sh/uv/getting-started/installation/). Run commands from the repository root on Windows PowerShell or Linux.
 
-The dataset and its annotations must be used according to the official MVTec AD license terms. The dataset is ignored by Git and excluded from the Docker image.
+```text
+uv sync --locked --python 3.13 --no-dev
+uv run --no-sync uvicorn visionguard.api.main:app --host 127.0.0.1 --port 8000 --no-access-log
+```
 
-text
-mvtec_anomaly_detection/
-  bottle/
-    train/good/*.png
-    test/good/*.png
-    test/<defect_type>/*.png
-    ground_truth/<defect_type>/*_mask.png
+First place the prepared `bottle-pc-v1/` directory under `artifacts/`. It must contain `patchcore.onnx`, `metadata.json`, and `split.json` together. Use your own preparation below or the reviewed bundle linked in [deployment](docs/deployment.md). Open [localhost:8000](http://localhost:8000), or check `/ready`. Restart the process after installing or changing an artifact. Optional example PNGs go in `artifacts/samples/bottle/`.
 
+## Prepare and evaluate from scratch
 
-Training uses defect-free training images only. Test images and ground-truth masks are reserved for evaluation and are never model-fitting inputs.
+Read the [MVTec AD dataset terms](https://www.mvtec.com/research-teaching/datasets/mvtec-ad) and [attribution](NOTICE.md) before downloading. Use the publisher's Bottle archive if available. The helper downloads a pinned mirror of the Bottle images and masks, plus the exact pretrained weight file into ignored `data/`. The directory structure is `data/mvtec/bottle/{train,test,ground_truth}`.
 
-Setup and validation
+```text
+uv sync --locked --python 3.13 --group prepare --group browser
+uv run --no-sync python -m scripts.fetch_bottle
+uv run --no-sync python -m scripts.dataset --dataset data/mvtec/bottle
+uv run --no-sync python -m scripts.prepare --config configs/bottle.toml --dataset data/mvtec/bottle --weights data/resnet18.a1_in1k.safetensors --output artifacts/bottle-pc-v1
+uv run --no-sync python -m scripts.evaluate --dataset data/mvtec/bottle --artifact artifacts/bottle-pc-v1 --category bottle --version bottle-pc-v1 --output outputs/bottle-evaluation.json
+uv run --no-sync python -m scripts.stage_examples --dataset data/mvtec/bottle
+```
 
-Use a TensorFlow-supported Python version. The Docker image uses Python 3.11.
+Preparation refuses to overwrite an artifact. For experiments, use a new version and directory. The release split is 167 fitting normals and 42 calibration normals (seed 42), with a separate 83-image test set. The frozen cutoff is the empirical 95th percentile with the higher order statistic, using only calibration normals. This small calibration set cannot guarantee a future false-positive rate. The [verification report](docs/verification.md) records measured results and scope.
 
-powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-$env:PYTHONPATH = "src"
-python -m training.validate_dataset --dataset-root mvtec_anomaly_detection --category bottle
+## API
 
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | Process health |
+| `GET /ready` | Returns 503 until a configured artifact loads and runs |
+| `GET /api/categories` | Warmed categories, examples, and upload limits |
+| `POST /api/predict?category=bottle` | Accepts raw JPEG, PNG or WebP bytes |
+| `GET /docs` | Interactive API reference |
 
-Validation checks category/split structure, image presence and readability, and defect ground-truth directories. It fails loudly on malformed data.
+```sh
+curl -fsS -H "Content-Type: application/octet-stream" --data-binary "@data/mvtec/bottle/test/good/000.png" "http://127.0.0.1:8000/api/predict?category=bottle"
+```
 
-The first training run may download public VGG16 ImageNet weights into TensorFlow's cache. Inference reconstructs that documented network from cached weights; it does not retrain or download it per request.
+On Windows use `curl.exe`. The response has `category`, `label`, `anomaly_score`, `threshold`, `model_version`, `processing_ms`, `heatmap_range`, and two PNG data URLs (`original` and `overlay`). The server compares the raw score using strict `>`; the separately calibrated display range applies to all images for that artifact. Errors return `{"code":"…","message":"…"}`. Oversized uploads return 413; bad images 422; a busy process 429; missing models 503.
 
-Train and evaluate
+## Project map and checks
 
-The tracked configuration uses the bottle category. Copy or edit it to change paths or category; application source does not hard-code a personal path.
+| Folder | Contents |
+| --- | --- |
+| `visionguard/api` | HTTP routes, upload limits, startup model registry |
+| `visionguard/ml` | Image transforms, PatchCore adapter, artifact loading and overlays |
+| `visionguard/web` | Single inspection page |
+| `scripts` | Dataset, preparation, evaluation, sample, runtime and browser commands |
+| `configs`, `tests`, `docs` | Release settings, tests, handover |
 
-powershell
-$env:PYTHONPATH = "src"
-python -m training.train --config configs/default.json
+```text
+uv sync --locked --python 3.13
+uv run --no-sync ruff check .
+uv run --no-sync python -m pytest -m "not ml" -q
+```
 
+For the actual Anomalib adapter check, install the `prepare` group and run `uv run --no-sync python -m pytest -m ml -q`. For real browser checks, provision Bottle and stage examples first, then run `uv run --no-sync playwright install chromium` and `uv run --no-sync python -m scripts.verify_browser --dataset data/mvtec/bottle`. See [container and hosting](docs/deployment.md) and the [interview guide](docs/interview-guide.md).
 
-The command writes ignored local state:
+## Troubleshooting and limits
 
-artifacts/bottle_v1/reference_embeddings.npy — normal reference bank
-artifacts/bottle_v1/metadata.json — threshold, feature/preprocessing, threshold policy, configuration, and runtime metadata
-outputs/bottle_image_level_evaluation.json — AUROC, average precision, threshold metrics, group summaries, false positives, and false negatives
+- **No category:** Check `/ready` and startup logs for a missing, incompatible, or modified artifact. Run from the repository root or set `VG_CONFIG` and `VG_ARTIFACTS` to absolute paths.
+- **Upload rejected:** Use a still JPEG, PNG, or WebP within the advertised byte limit and 12 million decoded pixels by default.
+- **Poor result:** Use a similarly framed Bottle image with a consistent background and lighting. Small defects may blur at 160 × 160; unfamiliar products or backgrounds may dominate the score.
+- **Next steps:** Validate under different cameras and lighting before adding categories. With more independent normal samples, estimate operating uncertainty and select a threshold for the target inspection cost.
 
-The evaluation report uses held-out MVTec test labels only after training. It is an image-level portfolio evaluation, not an official leaderboard claim. Add --skip-evaluation to produce an artifact only.
-
-Observed bottle baseline run (2026-10-24)
-
-The configured full run validated 209 normal training images and 83 held-out test images, then persisted a 209 × 512 reference bank. Its normal-only threshold was 0.121975.
-
-Held-out image-level metrics:
-
-AUROC: 0.984921
-Average precision: 0.994984
-True negatives: 18
-False positives: 2
-False negatives: 1
-True positives: 62
-Precision: 0.968750
-Recall: 0.984127
-F1 score: 0.976378
-
-The error analysis identifies the two high-scoring normal images and the missed contamination image in outputs/bottle_image_level_evaluation.json.
-
-These figures describe one bottle baseline run, not a multi-category or official benchmark result. No test result was used to select the threshold.
-
-API
-
-The API loads its artifact once on startup. GET /health reports healthy or unavailable; POST /predict accepts a multipart upload, validates image bytes with Pillow rather than trusting the filename or MIME type, and applies training-equivalent preprocessing.
-
-powershell
-$env:PYTHONPATH = "src"
-$env:VISIONGUARD_ARTIFACT_DIR = "artifacts/bottle_v1"
-uvicorn api.main:app --host 127.0.0.1 --port 8000
-Invoke-RestMethod http://127.0.0.1:8000/health
-Invoke-RestMethod -Method Post http://127.0.0.1:8000/predict -Form @{ file = Get-Item "mvtec_anomaly_detection/bottle/test/good/000.png" }
-
-
-OpenAPI documentation: http://127.0.0.1:8000/docs
-
-Example response schema:
-
-json
-{
-  "prediction": "normal",
-  "anomaly_score": 0.0,
-  "threshold": 0.0,
-  "model_version": "visionguard-v0.1.0",
-  "category": "bottle"
-}
-
-
-The values are illustrative, not a measured prediction. prediction is anomaly exactly when the score is at least the threshold. Bad image bytes receive HTTP 422; uploads larger than 10 MiB receive HTTP 413; unavailable artifacts return HTTP 503. The service never produces a fake fallback prediction.
-
-Tests
-powershell
-.\.venv\Scripts\python.exe -m pytest
-
-
-Tests use synthetic images, temporary MVTec-like folders, controlled embeddings, artifact round-trips, and a test-double predictor. They need no full dataset, GPU, or ImageNet download.
-
-Docker
-
-An image is a packaged runtime; a container is a running instance; Uvicorn in the container exposes port 8000. Build after training, then mount artifacts:
-
-powershell
-docker build -t visionguard:local .
-docker run --rm -p 8000:8000 -v "${PWD}\artifacts:/models:ro" visionguard:local
-Invoke-RestMethod http://127.0.0.1:8000/health
-
-
-The image deliberately excludes the complete dataset and artifact. An omitted artifact mount yields an unhealthy service and HTTP 503 inference responses. Docker downloads/caches VGG16 weights during the image build, not at request time.
-
-Docker Desktop was not running during the 2026-10-24 verification, so the build and container commands remain unverified in that checkout.
-
-Layout
-text
-src/visionguard/   reusable data, feature, detector, artifact, evaluation, inference
-training/          validation and training CLIs
-api/               FastAPI service
-configs/           portable JSON configuration
-tests/             lightweight automated tests
-artifacts/         ignored local model state
-outputs/            ignored evaluation/error-analysis output
-
-Limitations
-This is a frozen ImageNet-feature nearest-neighbor baseline, not PatchCore or a state-of-the-art claim.
-A percentile threshold controls a normal-training tail; it is not a calibrated defect probability and must be revisited for a real inspection line.
-VGG16 features can miss subtle domain-specific defects.
-No localization, cloud deployment, GPU latency claim, or certification is made.
-MVTec AD's license terms restrict appropriate use.
-Interview-ready decisions
-Preserve the normal-only benchmark split; do not turn anomaly detection into disguised supervised classification.
-Global pooling reduces 25,088 VGG16 spatial activations to a manageable 512-dimensional embedding without changing the pretrained backbone.
-Leave-one-out calibration prevents self-neighbor leakage.
-Explicit persisted artifacts mean inference never retrains.
-Byte validation, single model load, intentional HTTP failures, and behavior tests make the demo an engineered system rather than a notebook endpoint.
+Credit: [PatchCore paper](https://arxiv.org/abs/2106.08265), [original implementation](https://github.com/amazon-science/patchcore-inspection), [Anomalib](https://anomalib.readthedocs.io/), and [MVTec AD](https://www.mvtec.com/research-teaching/datasets/mvtec-ad). VisionGuard integrates those tools; it is an application engineering project.

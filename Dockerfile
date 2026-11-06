@@ -1,31 +1,20 @@
-FROM python:3.11-slim
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/src \
-    VISIONGUARD_ARTIFACT_DIR=/models/bottle_v1
-
+FROM ghcr.io/astral-sh/uv:0.10.12 AS uv
+FROM python:3.13-slim-bookworm
 WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y libgomp1 \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system visionguard \
-    && useradd --system --gid visionguard --create-home visionguard
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Cache ImageNet VGG16 weights in the image. The API reconstructs the documented
-# architecture once at startup and never downloads weights per request.
-RUN python -c "from tensorflow.keras.applications import VGG16; VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))"
-
-COPY src ./src
-COPY api ./api
-
-RUN chown -R visionguard:visionguard /app
-USER visionguard
-
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PORT=8000 \
+    VG_ARTIFACTS=/models VG_SAMPLES=/models/samples PATH=/app/.venv/bin:$PATH
+COPY --from=uv /uv /bin/uv
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --no-dev --no-python-downloads --no-cache
+COPY configs/ configs/
+COPY visionguard/ visionguard/
+COPY scripts/provision_bundle.py /app/scripts/provision_bundle.py
+ARG VG_BUNDLE_URL=""
+ARG VG_BUNDLE_SHA256=""
+RUN if [ -n "$VG_BUNDLE_URL" ] || [ -n "$VG_BUNDLE_SHA256" ]; then \
+      python /app/scripts/provision_bundle.py --url "$VG_BUNDLE_URL" --sha256 "$VG_BUNDLE_SHA256" --target /models; \
+    fi
+USER 10001:10001
 EXPOSE 8000
-
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+HEALTHCHECK --interval=15s --timeout=3s --start-period=20s CMD python -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ['PORT']+'/ready',timeout=2)"
+CMD ["sh", "-c", "exec uvicorn visionguard.api.main:app --host 0.0.0.0 --port \"$PORT\" --workers 1 --no-access-log"]

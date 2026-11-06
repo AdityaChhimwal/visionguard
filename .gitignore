@@ -1,46 +1,24 @@
-# Python
 __pycache__/
 *.py[cod]
-*.pyo
-
-# Virtual environments
-.venv/
-venv/
-env/
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Data
-data/raw/
-data/processed/
-mvtec_anomaly_detection/
-
-# Model artifacts
+.venv*/
+.pytest_cache/
+.ruff_cache/
+.coverage
+*.egg-info/
+dist/
+data/
 artifacts/
 outputs/
-
-# Environment variables
+mvtec_anomaly_detection/
+*.onnx
+*.pt
+*.pth
+*.safetensors
 .env
-
-# IDE
+.env.*
+!.env.example
+*.log
 .vscode/
 .idea/
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Logs
-*.log
-logs/
-.pytest_tmp/
-pytest_temp/
-
-# Local datasets and generated model artifacts
-mvtec_anomaly_detection/
-artifacts/
-outputs/
-.venv/
-__pycache__/
-.pytest_cache/

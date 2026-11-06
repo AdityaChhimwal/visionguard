@@ -1,33 +1,21 @@
-from pathlib import Path
+import json
 
-import numpy as np
 import pytest
 
-from visionguard.artifacts import ArtifactError, load_artifact, save_artifact
-from visionguard.detector import NearestNeighborDetector
+from visionguard.ml.artifacts import METADATA_FILE, MODEL_FILE, SPLIT_FILE, Artifact, checksum
+from visionguard.ml.images import PREPROCESSING
 
 
-def metadata() -> dict:
-    return {
-        "model_version": "test-v1",
-        "category": "widget",
-        "feature_extractor": "vgg16_block5_global_average",
-        "image_size": [224, 224],
-        "weights": "imagenet",
-    }
-
-
-def test_artifact_round_trip_preserves_detector_and_metadata(tmp_path: Path) -> None:
-    detector = NearestNeighborDetector(np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32))
-    save_artifact(tmp_path / "artifact", detector, 0.5, metadata())
-
-    loaded = load_artifact(tmp_path / "artifact")
-
-    assert loaded.threshold == 0.5
-    assert loaded.metadata["model_version"] == "test-v1"
-    assert loaded.detector.score_embedding(np.array([1.0, 0.0])) == pytest.approx(0.0)
-
-
-def test_missing_artifact_is_actionable(tmp_path: Path) -> None:
-    with pytest.raises(ArtifactError, match="incomplete"):
-        load_artifact(tmp_path / "does-not-exist")
+def test_corrupt_graph_rejected_before_runtime_deserialization(tmp_path):
+    model = b"not an ONNX graph"
+    split = b"{}"
+    (tmp_path / MODEL_FILE).write_bytes(model)
+    (tmp_path / SPLIT_FILE).write_bytes(split)
+    (tmp_path / METADATA_FILE).write_text(json.dumps({
+        "schema_version": 1, "category": "bottle", "version": "v1",
+        "preprocessing": PREPROCESSING, "model": {"image_size": 160},
+        "calibration": {"threshold": 0.5, "heatmap_high": 0.4},
+        "sha256": {MODEL_FILE: checksum(model + b"x"), SPLIT_FILE: checksum(split)},
+    }), encoding="utf-8")
+    with pytest.raises(ValueError, match="checksum"):
+        Artifact(tmp_path, "bottle", "v1")
