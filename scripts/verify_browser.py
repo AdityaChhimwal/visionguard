@@ -34,6 +34,8 @@ def flow(page: Page, url: str, dataset: Path, screenshot: Path, mobile: bool) ->
     else:
         page.get_by_label("Choose an image").set_input_files(str(dataset / EXAMPLES["normal"]))
     expect(page.locator("#preview")).to_be_visible()
+    if not mobile:
+        assert page.get_by_label("Choose an image").evaluate("(input) => input.files.length") == 1
     page.get_by_role("button", name="Analyze Image", exact=True).click()
     expect(page.locator("#result")).to_be_visible(timeout=30_000)
     assert "Analyzing image…" in page.evaluate("window.inspectionStates")

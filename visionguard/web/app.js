@@ -30,12 +30,12 @@ function cancel() {
   active = null;
   busy = false;
 }
-function reset() {
+function reset({ clearInput = true } = {}) {
   cancel();
   if (previewUrl) URL.revokeObjectURL(previewUrl);
   previewUrl = null;
   image = null;
-  input.value = "";
+  if (clearInput) input.value = "";
   for (const id of ["preview", "original", "overlay"]) $(id).removeAttribute("src");
   $("preview-box").hidden = true;
   $("result").hidden = true;
@@ -46,9 +46,9 @@ function reset() {
   controls();
 }
 
-function selectImage(file) {
+function selectImage(file, fromPicker = false) {
   if (!category.value || !file) return;
-  reset();
+  reset({ clearInput: !fromPicker });
   if (file.size === 0) return showError("This file is empty. Choose another image.");
   if (file.size > maxBytes) return showError("This file exceeds the upload limit.");
   if (file.type && !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
@@ -174,7 +174,7 @@ analyze.addEventListener("click", async () => {
   }
 });
 
-input.addEventListener("change", () => selectImage(input.files[0]));
+input.addEventListener("change", () => selectImage(input.files[0], true));
 category.addEventListener("change", chooseCategory);
 $("reset").addEventListener("click", () => { reset(); input.focus(); });
 $("retry").addEventListener("click", discover);
