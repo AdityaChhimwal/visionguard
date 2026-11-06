@@ -1,0 +1,639 @@
+{
+  "category": "bottle",
+  "version": "bottle-pc-v1",
+  "dataset_scope": "All PNGs in the supplied category test directory",
+  "count": 83,
+  "normal": 20,
+  "defective": 63,
+  "threshold": 8.511868476867676,
+  "image_auroc": 0.9984126984126984,
+  "precision": 0.9402985074626866,
+  "recall": 1.0,
+  "f1": 0.9692307692307692,
+  "confusion_matrix": {
+    "tn": 16,
+    "fp": 4,
+    "fn": 0,
+    "tp": 63
+  },
+  "pixel_auroc": 0.9717714959365089,
+  "pixel_count": 67230000,
+  "pixel_protocol": "Pooled original-resolution masks; bilinear aligned raw maps",
+  "artifact": {
+    "schema_version": 1,
+    "category": "bottle",
+    "version": "bottle-pc-v1",
+    "model": {
+      "category": "bottle",
+      "version": "bottle-pc-v1",
+      "backbone": "resnet18.a1_in1k",
+      "weights_revision": "491b427b45c94c7fb0e78b5474cc919aff584bbf",
+      "weights_sha256": "80c49dee3da4822c009c5a7fe591e9223c5a2cfcf95a4067ca4dfb5a7b89c612",
+      "layers": [
+        "layer2",
+        "layer3"
+      ],
+      "image_size": 160,
+      "coreset_ratio": 0.01,
+      "neighbors": 1,
+      "seed": 42,
+      "calibration_fraction": 0.2,
+      "false_positive_target": 0.05,
+      "batch_size": 8,
+      "threads": 2,
+      "fit_patches": 66800,
+      "coreset_rows": 668,
+      "embedding_channels": 384
+    },
+    "preprocessing": {
+      "version": 1,
+      "orientation": "EXIF transpose",
+      "color": "RGB",
+      "resize": "whole frame, bilinear, square",
+      "mean": [
+        0.48500001430511475,
+        0.4560000002384186,
+        0.4059999883174896
+      ],
+      "std": [
+        0.2290000021457672,
+        0.2240000069141388,
+        0.22499999403953552
+      ]
+    },
+    "weights": {
+      "url": "https://huggingface.co/timm/resnet18.a1_in1k/tree/491b427b45c94c7fb0e78b5474cc919aff584bbf",
+      "sha256": "80c49dee3da4822c009c5a7fe591e9223c5a2cfcf95a4067ca4dfb5a7b89c612"
+    },
+    "dependencies": {
+      "anomalib": "2.7.0",
+      "torch": "2.10.0+cpu",
+      "torchvision": "0.25.0+cpu",
+      "timm": "1.0.25",
+      "onnx": "1.20.1",
+      "onnxruntime": "1.24.4",
+      "numpy": "2.4.3",
+      "pillow": "12.2.0",
+      "safetensors": "0.7.0",
+      "scikit-learn": "1.8.0"
+    },
+    "calibration": {
+      "threshold": 8.511868476867676,
+      "heatmap_high": 7.776684761047363,
+      "target": 0.05,
+      "count": 42,
+      "observed_fraction_above": 0.047619047619047616,
+      "quantile_method": "higher"
+    },
+    "export_parity": {
+      "calibration_images": 42,
+      "rtol": 0.0001,
+      "atol": 0.001,
+      "max_abs_score_delta": 7.724761962890625e-05,
+      "max_abs_map_delta": 0.0001468658447265625
+    },
+    "sha256": {
+      "patchcore.onnx": "f1e49d1b9ae9aac29ac12e6c3f1417302541f2009aec5fda42225e30de7aa3c1",
+      "split.json": "2b6c566fe0d4b133b4f045573cc7292ae137949a017d5930246547d78ecabbf4"
+    },
+    "preparation": {
+      "command": [
+        "python",
+        "-m",
+        "scripts.prepare",
+        "--config",
+        "configs/bottle.toml",
+        "--dataset",
+        "data/mvtec/bottle",
+        "--weights",
+        "data/resnet18.a1_in1k.safetensors",
+        "--output",
+        "artifacts/bottle-pc-v1"
+      ],
+      "os": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+      "cpu": "x86_64",
+      "seconds": 26.763
+    }
+  },
+  "runtime": {
+    "os": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "cpu": "x86_64",
+    "threads": 2,
+    "seconds": 23.832,
+    "command": [
+      "python",
+      "-m",
+      "scripts.evaluate",
+      "--dataset",
+      "data/mvtec/bottle",
+      "--artifact",
+      "artifacts/bottle-pc-v1",
+      "--category",
+      "bottle",
+      "--version",
+      "bottle-pc-v1",
+      "--output",
+      "outputs/bottle-evaluation.json"
+    ]
+  },
+  "predictions": [
+    {
+      "image": "test/broken_large/000.png",
+      "target": "ANOMALY",
+      "score": 21.014507293701172,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/001.png",
+      "target": "ANOMALY",
+      "score": 19.08148956298828,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/002.png",
+      "target": "ANOMALY",
+      "score": 20.626562118530273,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/003.png",
+      "target": "ANOMALY",
+      "score": 23.914329528808594,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/004.png",
+      "target": "ANOMALY",
+      "score": 22.335655212402344,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/005.png",
+      "target": "ANOMALY",
+      "score": 16.999618530273438,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/006.png",
+      "target": "ANOMALY",
+      "score": 22.34786605834961,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/007.png",
+      "target": "ANOMALY",
+      "score": 18.563291549682617,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/008.png",
+      "target": "ANOMALY",
+      "score": 18.889429092407227,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/009.png",
+      "target": "ANOMALY",
+      "score": 16.637306213378906,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/010.png",
+      "target": "ANOMALY",
+      "score": 20.554290771484375,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/011.png",
+      "target": "ANOMALY",
+      "score": 16.1396427154541,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/012.png",
+      "target": "ANOMALY",
+      "score": 18.550941467285156,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/013.png",
+      "target": "ANOMALY",
+      "score": 20.653242111206055,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/014.png",
+      "target": "ANOMALY",
+      "score": 20.057905197143555,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/015.png",
+      "target": "ANOMALY",
+      "score": 18.380699157714844,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/016.png",
+      "target": "ANOMALY",
+      "score": 18.579248428344727,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/017.png",
+      "target": "ANOMALY",
+      "score": 20.76003074645996,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/018.png",
+      "target": "ANOMALY",
+      "score": 21.16753578186035,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_large/019.png",
+      "target": "ANOMALY",
+      "score": 19.117341995239258,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/000.png",
+      "target": "ANOMALY",
+      "score": 13.590211868286133,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/001.png",
+      "target": "ANOMALY",
+      "score": 19.97679328918457,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/002.png",
+      "target": "ANOMALY",
+      "score": 18.395795822143555,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/003.png",
+      "target": "ANOMALY",
+      "score": 19.456892013549805,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/004.png",
+      "target": "ANOMALY",
+      "score": 20.463478088378906,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/005.png",
+      "target": "ANOMALY",
+      "score": 14.802706718444824,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/006.png",
+      "target": "ANOMALY",
+      "score": 17.10324478149414,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/007.png",
+      "target": "ANOMALY",
+      "score": 15.643949508666992,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/008.png",
+      "target": "ANOMALY",
+      "score": 15.795151710510254,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/009.png",
+      "target": "ANOMALY",
+      "score": 19.581398010253906,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/010.png",
+      "target": "ANOMALY",
+      "score": 19.20964241027832,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/011.png",
+      "target": "ANOMALY",
+      "score": 17.004056930541992,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/012.png",
+      "target": "ANOMALY",
+      "score": 20.953731536865234,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/013.png",
+      "target": "ANOMALY",
+      "score": 18.794984817504883,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/014.png",
+      "target": "ANOMALY",
+      "score": 14.513648986816406,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/015.png",
+      "target": "ANOMALY",
+      "score": 15.558592796325684,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/016.png",
+      "target": "ANOMALY",
+      "score": 16.707347869873047,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/017.png",
+      "target": "ANOMALY",
+      "score": 21.3623104095459,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/018.png",
+      "target": "ANOMALY",
+      "score": 22.570335388183594,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/019.png",
+      "target": "ANOMALY",
+      "score": 19.405445098876953,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/020.png",
+      "target": "ANOMALY",
+      "score": 20.816509246826172,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/broken_small/021.png",
+      "target": "ANOMALY",
+      "score": 16.78191566467285,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/000.png",
+      "target": "ANOMALY",
+      "score": 17.32829475402832,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/001.png",
+      "target": "ANOMALY",
+      "score": 13.7574462890625,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/002.png",
+      "target": "ANOMALY",
+      "score": 15.946244239807129,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/003.png",
+      "target": "ANOMALY",
+      "score": 10.290850639343262,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/004.png",
+      "target": "ANOMALY",
+      "score": 10.70507526397705,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/005.png",
+      "target": "ANOMALY",
+      "score": 18.896282196044922,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/006.png",
+      "target": "ANOMALY",
+      "score": 16.015918731689453,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/007.png",
+      "target": "ANOMALY",
+      "score": 29.796802520751953,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/008.png",
+      "target": "ANOMALY",
+      "score": 16.381454467773438,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/009.png",
+      "target": "ANOMALY",
+      "score": 15.575738906860352,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/010.png",
+      "target": "ANOMALY",
+      "score": 15.541786193847656,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/011.png",
+      "target": "ANOMALY",
+      "score": 14.121015548706055,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/012.png",
+      "target": "ANOMALY",
+      "score": 12.610958099365234,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/013.png",
+      "target": "ANOMALY",
+      "score": 27.616796493530273,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/014.png",
+      "target": "ANOMALY",
+      "score": 18.867055892944336,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/015.png",
+      "target": "ANOMALY",
+      "score": 17.045135498046875,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/016.png",
+      "target": "ANOMALY",
+      "score": 13.010287284851074,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/017.png",
+      "target": "ANOMALY",
+      "score": 27.558700561523438,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/018.png",
+      "target": "ANOMALY",
+      "score": 20.230810165405273,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/019.png",
+      "target": "ANOMALY",
+      "score": 8.9487886428833,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/contamination/020.png",
+      "target": "ANOMALY",
+      "score": 12.784997940063477,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/good/000.png",
+      "target": "NORMAL",
+      "score": 8.162981986999512,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/001.png",
+      "target": "NORMAL",
+      "score": 8.04995346069336,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/002.png",
+      "target": "NORMAL",
+      "score": 7.959607124328613,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/003.png",
+      "target": "NORMAL",
+      "score": 8.008990287780762,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/004.png",
+      "target": "NORMAL",
+      "score": 7.9295759201049805,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/005.png",
+      "target": "NORMAL",
+      "score": 7.911277770996094,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/006.png",
+      "target": "NORMAL",
+      "score": 9.33548355102539,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/good/007.png",
+      "target": "NORMAL",
+      "score": 8.178011894226074,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/008.png",
+      "target": "NORMAL",
+      "score": 7.932561874389648,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/009.png",
+      "target": "NORMAL",
+      "score": 8.22004222869873,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/010.png",
+      "target": "NORMAL",
+      "score": 8.321834564208984,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/011.png",
+      "target": "NORMAL",
+      "score": 7.883056163787842,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/012.png",
+      "target": "NORMAL",
+      "score": 8.12866497039795,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/013.png",
+      "target": "NORMAL",
+      "score": 8.146647453308105,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/014.png",
+      "target": "NORMAL",
+      "score": 8.176004409790039,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/015.png",
+      "target": "NORMAL",
+      "score": 8.778024673461914,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/good/016.png",
+      "target": "NORMAL",
+      "score": 7.891726970672607,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/017.png",
+      "target": "NORMAL",
+      "score": 8.261784553527832,
+      "label": "NORMAL"
+    },
+    {
+      "image": "test/good/018.png",
+      "target": "NORMAL",
+      "score": 8.558215141296387,
+      "label": "ANOMALY"
+    },
+    {
+      "image": "test/good/019.png",
+      "target": "NORMAL",
+      "score": 9.177848815917969,
+      "label": "ANOMALY"
+    }
+  ]
+}

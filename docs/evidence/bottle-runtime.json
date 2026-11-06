@@ -1,0 +1,31 @@
+{
+  "startup_seconds": 0.712,
+  "readiness": {
+    "status": "ready",
+    "categories": [
+      "bottle"
+    ]
+  },
+  "os": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+  "cpu": "x86_64",
+  "logical_cpus": 4,
+  "examples": {
+    "normal": {
+      "label": "NORMAL",
+      "anomaly_score": 8.162981986999512,
+      "threshold": 8.511868476867676,
+      "model_version": "bottle-pc-v1"
+    },
+    "defect": {
+      "label": "ANOMALY",
+      "anomaly_score": 21.014507293701172,
+      "threshold": 8.511868476867676,
+      "model_version": "bottle-pc-v1"
+    }
+  },
+  "warm_requests": 16,
+  "median_http_ms": 220.3,
+  "p95_http_ms": 225.85,
+  "peak_rss_mib": 187.57,
+  "artifact_bytes": 13233088
+}
