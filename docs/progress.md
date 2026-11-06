@@ -1,8 +1,8 @@
 # Rebuild progress
 
-- Baseline: GitHub main at `f5ab175d71783f783f799d5225e8ad731366b986`, 7 commits. The local folder initially had no checkout, remote, or uncommitted user work. Fetched main, inspected tracked files and instructions, and branched to `codex/rebuild`.
-- Design: one FastAPI container and static web page. Offline Anomalib PatchCore with a pretrained ResNet-18; versioned ONNX graph for a smaller serving process. Export must match PyTorch before release.
-- Milestones: verify dataset and pinned dependencies; fit and calibrate on separate normal images; evaluate untouched test split; validate API, browser and container; review and publish Git history; verify anonymous HTTPS.
-- Hardware: Ryzen 5 3550H, 8 logical CPUs; GTX 1650 (4 GiB) available. Start with CPU for parity with deployment.
-- Dataset: historical publisher URLs return 404. Downloading pinned MVTec AD Bottle mirror under non-commercial terms; provenance and counts will be recorded.
-- Hosting: Docker Desktop installed, engine initially unavailable. No known authenticated hosting account. Render Free is a candidate only if measured footprint fits.
+- Baseline: GitHub main at `f5ab175d71783f783f799d5225e8ad731366b986`, 7 commits. The local folder initially had no checkout, remote, or uncommitted user work. Fetched and inspected main, then created `codex/rebuild` and retired the tracked VGG16 prototype. Original history is preserved.
+- Design: one FastAPI container and static web page. Offline Anomalib PatchCore with pretrained ResNet-18; a verified versioned ONNX graph for a smaller serving process.
+- Data and model: pinned MVTec AD Bottle mirror (publisher's old archive URLs returned 404), 167 fitting normals, 42 calibration normals, 83 untouched test images, 668-row coreset. Model and dataset bytes are excluded from the Git tree.
+- Evidence: [real-model workflow](https://github.com/AdityaChhimwal/visionguard/actions/runs/42185022406) passed export parity, frozen evaluation, real desktop/mobile Chromium, and a network-disabled Linux container. See [verification](verification.md) for measured metrics and latency.
+- Local hardware: Ryzen 5 3550H, 8 logical CPUs, GTX 1650 4 GiB; the local Docker engine was unavailable. Large Windows dependency downloads timed out, so fresh installs and full verification used GitHub runners.
+- Hosting: the verified process is within Render Free's published memory budget on the sample workload. Public trial needs an authenticated free workspace; no paid service started. Next step is [deploy and run anonymous verification](deployment.md) once hosting access is available.
