@@ -2,7 +2,7 @@
 
 VisionGuard is a non-commercial portfolio demo for checking product images under repeatable inspection conditions. Upload a product image and the service returns a PatchCore decision, its raw anomaly score and threshold, and an aligned heatmap overlay. The first release targets **MVTec AD Bottle**. Each category needs its own fitted, verified artifact.
 
-**Deployment:** No public inference URL is verified yet. [Deploy on Render Free](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2FAdityaChhimwal%2Fvisionguard) or run the real model locally.
+**Live demo** · [Open VisionGuard on Render](https://visionguard-ljwy.onrender.com). Render Free can take a short while to wake after inactivity. Try the Normal and Defective Bottle examples once the page loads.
 
 ```mermaid
 flowchart LR

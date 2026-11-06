@@ -24,9 +24,13 @@ Check `http://localhost:8000/ready`. `/health` only means the process is alive. 
 
 ## Render Free web service
 
-The [measured process](verification.md) peaked at 187.57 MiB while serving 900 × 900 samples. [Render Free](https://render.com/docs/free) provides [512 MB and 0.1 CPU](https://render.com/docs/compute-plans). Use a 4-megapixel decoded limit and one ONNX thread for the first public trial; real host latency and peak usage still need checking. Render sleeps after inactivity and the first request can take longer. The [Docker runtime](https://render.com/docs/docker) passes the non-secret settings below through as build arguments, so the asset is checked and baked into the image.
+The public service serves the Bottle model and both example images. A fresh Chrome session loaded the page and ran both examples after a Render wakeup. [Live demo](https://visionguard-ljwy.onrender.com) · [Verification results](verification.md#public-render-verification)
 
-[Deploy on Render Free](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2FAdityaChhimwal%2Fvisionguard) loads the [preconfigured Blueprint](../render.yaml) after you sign in. Review that the service plan says **Free** and apply it. For manual setup:
+The Linux test runner measured 187.57 MiB peak process memory while serving 900 × 900 samples. The Render configuration uses a 4-megapixel decoded image limit and one ONNX thread. Render can sleep after inactivity. The Docker runtime passes the public bundle settings below as build arguments, so the build checks the model archive and includes it in the image. [Render Free](https://render.com/docs/free) · [Docker builds](https://render.com/docs/docker)
+
+To create a separate service, sign in and apply the Blueprint with the **Free** plan selected. The Blueprint disables automatic deploys. Use **Manual Deploy** in its dashboard when you need to publish an application change. [Deploy on Render Free](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2FAdityaChhimwal%2Fvisionguard) · [Blueprint](../render.yaml)
+
+For manual setup:
 
 1. Sign in to Render, create a **Web Service** from the public Git repository `https://github.com/AdityaChhimwal/visionguard`, and select the verified branch (normally `main` after merge). Select **Docker**, root `.`, Dockerfile `./Dockerfile`, and **Free**. Do not select paid compute.
 2. Under Advanced set **Health Check Path** to `/ready`. Use these settings:
@@ -41,7 +45,4 @@ The [measured process](verification.md) peaked at 187.57 MiB while serving 900 �
 | `VG_MAX_PIXELS` | `4000000` |
 | `VG_UPLOAD_BYTES` | `6291456` |
 
-3. Deploy, then open the assigned HTTPS hostname in a signed-out browser and analyze both fixed examples. Check that the overlay renders and that an invalid file reports an error. Run `python -m scripts.verify_public --url https://YOUR-SERVICE.onrender.com` for anonymous readiness, two real predictions and a malformed upload check. Record the first page latency after an observed sleep, along with warm results and any wrong classifications.
-4. Add the HTTPS link to the README only after the anonymous workflow passes.
-
-Vercel can host FastAPI, but its [function payload limits](https://vercel.com/docs/functions/limitations) require a separate API size budget. A new [Hugging Face Docker Space](https://huggingface.co/docs/hub/spaces-overview) requires an eligible plan. Render is the preferred path for the tested Docker build. Deployment is pending access to a signed-in free hosting workspace. No paid service has been started.
+3. After deploying, open the assigned hostname in a signed-out browser and analyze both fixed examples. Check the label and heatmap. Run `python -m scripts.verify_public --url https://visionguard-ljwy.onrender.com` to check the current public service over HTTPS.

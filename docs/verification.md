@@ -35,7 +35,7 @@ uv run --no-sync python -m scripts.verify_browser --dataset data/mvtec/bottle
 ## Real HTTP, browser and container checks
 
 - Bundle: 13,233,088 bytes (12.62 MiB). Fit/calibration took 26.8 s; evaluation including pixel AUROC took 23.8 s.
-- One Uvicorn worker, two ONNX threads, 16 sequential warm HTTP requests on the runner: **220.30 ms median**, **225.85 ms p95**. These include request reading, decode, inference, render, and JSON on loopback. The process was ready after **0.712 s** and reached **187.57 MiB** sampled RSS (10 ms cadence). Two 900 × 900 samples were used, so this is not a worst-case bound. Public host latency and cold starts remain unmeasured.
+- One Uvicorn worker, two ONNX threads, 16 sequential warm HTTP requests on the runner: **220.30 ms median**, **225.85 ms p95**. These include request reading, decode, inference, render, and JSON on loopback. The process was ready after **0.712 s** and reached **187.57 MiB** sampled RSS (10 ms cadence). Two 900 × 900 samples were used, so this is not a worst-case bound.
 - Fixed examples: `test/good/000.png` scored **8.162982**, NORMAL. `test/broken_large/000.png` scored **21.014507**, ANOMALY. Both predictions and overlays came from the actual model.
 - Desktop Chromium uploaded the normal PNG and mobile Chromium loaded the defective example. Checked result images, layout overflow, processing status, reset/focus, and a malformed drag-and-drop upload on desktop. The browser uses the same HTTP path for examples and uploads.
 - The Linux container built successfully, started with `--network none`, passed readiness, and ran both examples. This verifies the artifact is sufficient for serving without weight downloads.
@@ -46,3 +46,14 @@ See the workflow for the [exact run steps, evidence and artifacts](https://githu
 The [final rebuild checks](https://github.com/AdityaChhimwal/visionguard/actions/runs/42188042833) passed on Windows and Linux (17 passed, 1 PatchCore integration test deselected in each), and the [real-model rerun](https://github.com/AdityaChhimwal/visionguard/actions/runs/42188043042) passed with the locked dependencies. The [bundle publish job](https://github.com/AdityaChhimwal/visionguard/actions/runs/42188497384) verified the public ZIP at image build time; the image started and ran both examples with no network and no mounted assets.
 
 The locked serving environment was also installed on the local Ryzen 5 3550H Windows machine. The same two examples and malformed upload passed. A fresh process reached readiness in 2.119 s; 16 warm loopback requests measured 265.48 ms median and 317.79 ms p95, with 163.79 MiB sampled process-tree RSS including the Windows virtual environment launcher. See [Windows evidence](evidence/windows-runtime.json).
+
+## Public Render verification
+
+An anonymous Chrome session reached the app after Render's wakeup page, which took about 23 seconds in that run. Both sample requests returned HTTP 200 over HTTP/3, and the browser displayed the original image and heatmap for each result. [Public app](https://visionguard-ljwy.onrender.com)
+
+| Bottle example | Result | Score | Time until result appeared |
+| --- | --- | ---: | ---: |
+| Normal | NORMAL | 8.162982 | 7.77 s |
+| Defective | ANOMALY | 21.01451 | 6.77 s |
+
+The threshold was 8.511868. Public readiness returned HTTP 200, and a malformed upload returned HTTP 422. On this Windows connection, HTTP/1.1 clients intermittently reset during upload or stalled while reading the large preview response. The Chrome session completed both predictions.
