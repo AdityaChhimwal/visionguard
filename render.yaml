@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: visionguard
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /ready
+    autoDeployTrigger: "off"
+    envVars:
+      - key: VG_BUNDLE_URL
+        value: https://github.com/AdityaChhimwal/visionguard/releases/download/bottle-pc-v1/bottle-pc-v1.zip
+      - key: VG_BUNDLE_SHA256
+        value: 735c75e3acdaffa7a5e79ea8d9c5345e8a8e07e812868970059a6ef687dc6235
+      - key: PORT
+        value: "8000"
+      - key: VG_THREADS
+        value: "1"
+      - key: VG_INFERENCE_SLOTS
+        value: "1"
+      - key: VG_MAX_PIXELS
+        value: "4000000"
+      - key: VG_UPLOAD_BYTES
+        value: "6291456"

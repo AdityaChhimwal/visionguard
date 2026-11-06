@@ -42,3 +42,5 @@ uv run --no-sync python -m scripts.verify_browser --dataset data/mvtec/bottle
 - Synthetic PatchCore integration: 1 passed (15 unrelated tests deselected in that run). Ordinary CI runs lightweight tests without the preparation group. The Windows workstation's full dependency downloads timed out; a local subset passed using already available Python packages. GitHub runners provide fresh-install evidence.
 
 See the workflow for the [exact run steps, evidence and artifacts](https://github.com/AdityaChhimwal/visionguard/actions/runs/42185022406).
+
+The [final rebuild checks](https://github.com/AdityaChhimwal/visionguard/actions/runs/42188042833) passed on Windows and Linux (17 passed, 1 PatchCore integration test deselected in each), and the [real-model rerun](https://github.com/AdityaChhimwal/visionguard/actions/runs/42188043042) passed with the locked dependencies. The [bundle publish job](https://github.com/AdityaChhimwal/visionguard/actions/runs/42188497384) verified the public ZIP at image build time; the image started and ran both examples with no network and no mounted assets.
