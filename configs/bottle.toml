@@ -2,6 +2,7 @@ category = "bottle"
 version = "bottle-pc-v1"
 backbone = "resnet18.a1_in1k"
 weights_revision = "491b427b45c94c7fb0e78b5474cc919aff584bbf"
+weights_sha256 = "80c49dee3da4822c009c5a7fe591e9223c5a2cfcf95a4067ca4dfb5a7b89c612"
 layers = ["layer2", "layer3"]
 image_size = 160
 coreset_ratio = 0.01
