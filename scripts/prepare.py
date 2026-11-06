@@ -24,7 +24,9 @@ def tensor_for(path: Path, size: int) -> np.ndarray:
     return preprocess(decode_image(path.read_bytes()), size)
 
 
-def prepare(config: dict, dataset: Path, weights: Path, output: Path) -> dict:
+def prepare(
+    config: dict, dataset: Path, weights: Path, output: Path, *, command: list[str] | None = None,
+) -> dict:
     started = perf_counter()
     if output.exists():
         raise FileExistsError(f"{output} already exists. Choose a new output or version.")
@@ -97,7 +99,7 @@ def prepare(config: dict, dataset: Path, weights: Path, output: Path) -> dict:
             },
             "sha256": {name: sha256(directory / name) for name in (MODEL_FILE, SPLIT_FILE)},
             "preparation": {
-                "command": ["python", "-m", "scripts.prepare", *sys.argv[1:]],
+                "command": command or ["python", "-m", "scripts.prepare", *sys.argv[1:]],
                 "os": platform.platform(),
                 "cpu": platform.processor(),
                 "seconds": round(perf_counter() - started, 3),
