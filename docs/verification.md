@@ -1,5 +1,7 @@
 # Bottle release verification
 
+This report records the original Bottle release. The seeded full-category release has its own benchmark and container evidence. [MVTec AD benchmark](mvtec-ad-results.md) · [Full-release container verification](deployment.md#render-free-web-service)
+
 The [successful real-model workflow](https://github.com/AdityaChhimwal/visionguard/actions/runs/42185022406) ran on a GitHub-hosted Linux x86_64 runner with 4 logical CPUs. Fit and evaluation used two CPU threads. Input data was the pinned MVTec AD Bottle mirror documented in [NOTICE](../NOTICE.md).
 
 ## Split, model and metrics
