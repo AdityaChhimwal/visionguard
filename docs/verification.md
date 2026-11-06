@@ -44,3 +44,5 @@ uv run --no-sync python -m scripts.verify_browser --dataset data/mvtec/bottle
 See the workflow for the [exact run steps, evidence and artifacts](https://github.com/AdityaChhimwal/visionguard/actions/runs/42185022406).
 
 The [final rebuild checks](https://github.com/AdityaChhimwal/visionguard/actions/runs/42188042833) passed on Windows and Linux (17 passed, 1 PatchCore integration test deselected in each), and the [real-model rerun](https://github.com/AdityaChhimwal/visionguard/actions/runs/42188043042) passed with the locked dependencies. The [bundle publish job](https://github.com/AdityaChhimwal/visionguard/actions/runs/42188497384) verified the public ZIP at image build time; the image started and ran both examples with no network and no mounted assets.
+
+The locked serving environment was also installed on the local Ryzen 5 3550H Windows machine. The same two examples and malformed upload passed. A fresh process reached readiness in 2.119 s; 16 warm loopback requests measured 265.48 ms median and 317.79 ms p95, with 163.79 MiB sampled process-tree RSS including the Windows virtual environment launcher. See [Windows evidence](evidence/windows-runtime.json).
