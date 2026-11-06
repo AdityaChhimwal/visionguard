@@ -36,6 +36,8 @@ def prepare(
     size = config["image_size"]
     threads = config["threads"]
     torch.set_num_threads(threads)
+    # Anomalib's sparse projection samples column indices through scikit-learn.
+    np.random.seed(config["seed"])
     torch.manual_seed(config["seed"])
     torch.use_deterministic_algorithms(True)
     manifest = normal_split(dataset, config["seed"], config["calibration_fraction"])
