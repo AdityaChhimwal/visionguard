@@ -1,0 +1,50 @@
+name: Publish the verified Bottle bundle
+on:
+  push:
+    tags: [bottle-pc-v1]
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve the exact successful Bottle verification run
+        run: |
+          test "$(gh run view 42185022406 --json conclusion --jq .conclusion)" = success
+          gh run download 42185022406 --name bottle-verification --dir outputs/verified
+      - name: Package and check the versioned release payload
+        run: |
+          python -m scripts.package_bottle --artifact outputs/verified/artifacts/bottle-pc-v1 --output outputs/bottle-pc-v1.zip
+          python -m scripts.provision_bundle --file outputs/bottle-pc-v1.zip --sha256 "$(cat outputs/bottle-pc-v1.sha256)" --target outputs/provisioned
+      - name: Publish release files, with separate dataset and weight terms
+        run: |
+          gh release create bottle-pc-v1 --verify-tag --title "Bottle PatchCore v1" --notes-file NOTICE.md outputs/bottle-pc-v1.zip outputs/bottle-pc-v1.sha256
+      - name: Build from the public asset and boot without a network or mounted models
+        run: |
+          docker build -t visionguard:release \
+            --build-arg VG_BUNDLE_URL=https://github.com/AdityaChhimwal/visionguard/releases/download/bottle-pc-v1/bottle-pc-v1.zip \
+            --build-arg VG_BUNDLE_SHA256="$(cat outputs/bottle-pc-v1.sha256)" .
+          docker run -d --name visionguard-release --network none visionguard:release
+          trap 'docker logs visionguard-release; docker rm -f visionguard-release' EXIT
+          for attempt in $(seq 1 30); do
+            if docker exec visionguard-release python -c "from urllib.request import urlopen; assert urlopen('http://127.0.0.1:8000/ready').status == 200"; then break; fi
+            sleep 1
+          done
+          docker exec -i visionguard-release python - <<'PY'
+          import json
+          from urllib.request import Request, urlopen
+          base = "http://127.0.0.1:8000"
+          for kind in ("normal", "defect"):
+              with urlopen(f"{base}/api/examples/bottle/{kind}") as example:
+                  payload = example.read()
+              with urlopen(Request(f"{base}/api/predict?category=bottle", payload)) as response:
+                  result = json.load(response)
+              assert result["model_version"] == "bottle-pc-v1"
+              assert result["overlay"].startswith("data:image/png;base64,")
+              print(kind, result["label"], result["anomaly_score"])
+          PY
