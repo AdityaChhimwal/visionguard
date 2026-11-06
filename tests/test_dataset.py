@@ -2,7 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts.dataset import normal_split, test_pairs as collect_test_pairs
+from scripts.dataset import normal_split
+from scripts.dataset import test_pairs as collect_test_pairs
 
 
 def test_split_stable_and_excludes_other_folders(tmp_path: Path):
@@ -14,7 +15,7 @@ def test_split_stable_and_excludes_other_folders(tmp_path: Path):
     (tmp_path / "test/good/0.png").write_bytes(b"test")
     one = normal_split(tmp_path, 42, 0.2)
     assert one == normal_split(tmp_path, 42, 0.2)
-    assert one["calibration"] != normal_split(tmp_path, 17, 0.2)["calibration"]
+    assert one["calibration"] != normal_split(tmp_path, 43, 0.2)["calibration"]
     assert len(one["fit"]) == 8 and len(one["calibration"]) == 2
     assert not set(one["fit"]) & set(one["calibration"])
     assert set(one["fit"]) | set(one["calibration"]) == set(one["sha256"])

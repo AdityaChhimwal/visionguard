@@ -19,6 +19,7 @@ jobs:
         with:
           version: 0.10.12
       - name: Install and test API
+        shell: bash
         run: |
           uv sync --python 3.13
           uv run --no-sync ruff check .
