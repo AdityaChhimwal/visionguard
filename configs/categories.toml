@@ -1,4 +1,89 @@
 [categories.bottle]
 name = "Bottle"
 artifact = "bottle-pc-v1"
+kind = "object"
 description = "Use a close-up of a similar bottle under consistent lighting and framing."
+
+[categories.cable]
+name = "Cable"
+artifact = "cable-pc-v1"
+kind = "object"
+description = "Use a close-up of a similar multicolor cable assembly."
+
+[categories.capsule]
+name = "Capsule"
+artifact = "capsule-pc-v1"
+kind = "object"
+description = "Use a centered close-up of a similar two-piece capsule."
+
+[categories.hazelnut]
+name = "Hazelnut"
+artifact = "hazelnut-pc-v1"
+kind = "object"
+description = "Use a close-up of one hazelnut on a uniform background."
+
+[categories.metal_nut]
+name = "Metal nut"
+artifact = "metal_nut-pc-v1"
+kind = "object"
+description = "Use an overhead close-up of a similar hexagonal metal nut."
+
+[categories.pill]
+name = "Pill"
+artifact = "pill-pc-v1"
+kind = "object"
+description = "Use a centered close-up of a similar tablet."
+
+[categories.screw]
+name = "Screw"
+artifact = "screw-pc-v1"
+kind = "object"
+description = "Use a close-up of a single screw against a uniform background."
+
+[categories.toothbrush]
+name = "Toothbrush"
+artifact = "toothbrush-pc-v1"
+kind = "object"
+description = "Frame the bristles of a similar toothbrush head."
+
+[categories.transistor]
+name = "Transistor"
+artifact = "transistor-pc-v1"
+kind = "object"
+description = "Use a close-up of a similar transistor with its leads visible."
+
+[categories.zipper]
+name = "Zipper"
+artifact = "zipper-pc-v1"
+kind = "object"
+description = "Frame a close-up section of a similar zipper."
+
+[categories.carpet]
+name = "Carpet"
+artifact = "carpet-pc-v1"
+kind = "texture"
+description = "Fill the frame with a close-up of similar carpet texture."
+
+[categories.grid]
+name = "Grid"
+artifact = "grid-pc-v1"
+kind = "texture"
+description = "Fill the frame with a close-up of a similar repeating grid."
+
+[categories.leather]
+name = "Leather"
+artifact = "leather-pc-v1"
+kind = "texture"
+description = "Fill the frame with a close-up of similar leather grain."
+
+[categories.tile]
+name = "Tile"
+artifact = "tile-pc-v1"
+kind = "texture"
+description = "Fill the frame with a close-up of a similar tile surface."
+
+[categories.wood]
+name = "Wood"
+artifact = "wood-pc-v1"
+kind = "texture"
+description = "Fill the frame with a close-up of similar wood grain."
