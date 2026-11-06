@@ -22,7 +22,7 @@ jobs:
         with:
           version: 0.10.12
       - name: Install CPU dependencies
-        run: uv sync --python 3.13 --group prepare --group browser
+        run: uv sync --locked --python 3.13 --group prepare --group browser
       - name: Check the actual PatchCore adapter
         run: uv run --no-sync python -m pytest -m ml -q
       - name: Fetch pinned data and weights

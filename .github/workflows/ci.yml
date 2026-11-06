@@ -21,7 +21,7 @@ jobs:
       - name: Install and test API
         shell: bash
         run: |
-          uv sync --python 3.13
+          uv sync --locked --python 3.13
           uv run --no-sync ruff check .
           uv run --no-sync python -m pytest -m "not ml" -q
           node --check visionguard/web/app.js
