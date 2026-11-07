@@ -35,6 +35,8 @@ Across **1,725 held-out images** in all 15 categories, macro image AUROC was **0
 
 ## Run with a prepared artifact
 
+For the installed Windows copy in `D:\good_projects\visionguard`, open that folder in VS Code and run `bash start-local.sh` in Git Bash. The [beginner's guide](docs/beginners-guide.md) covers local startup, GitHub, Render, and maintenance. The launcher also works from other clone locations.
+
 Use 64-bit Python 3.13 and uv. These commands run from the repository root in Git Bash or Linux. [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
 
 ```bash
